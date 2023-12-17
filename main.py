@@ -175,9 +175,9 @@ async def __adminpanel(callback_query: types.CallbackQuery, state: FSMContext):
     
 @router.callback_query(lambda c: 'settings' in c.data)
 async def __settpanel(callback_query: types.CallbackQuery, state: FSMContext):
-    tag = InlineKeyboardButton(text='Изменить платежный тэг', callback_data='tagchng')
+    tag = InlineKeyboardButton(text='Изменить тэг', callback_data='tagchng')
     markup = InlineKeyboardMarkup(inline_keyboard=[[tag]] + [[InlineKeyboardButton(text='⬅️Назад', callback_data='go_start')]])
-    await bot.edit_message_text("Настройки", callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)
+    await bot.edit_message_text("⚙️ Настройки", callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)
 
 @router.callback_query(lambda c: 'tagchng' in c.data)
 async def __settpanel(callback_query: types.CallbackQuery, state: FSMContext):
