@@ -59,8 +59,8 @@ async def __start(message: Message, state: FSMContext) -> None:
             await message.answer(f'''Добро пожаловать в бот команды.\n\nВаш статус: {d[result[0][0]]}''',
                                  reply_markup=menu)
     else:
-        cursor.execute('INSERT INTO users (uid, status) VALUES (?, ?)', (message.from_user.id, 0))
-        
+        cursor.execute('INSERT INTO users (uid, status, username) VALUES (?, ?, ?)', (message.from_user.id, 0, message.from_user.username if message.from_user.username is not None else ''))
+        conn.commit()
         btn = InlineKeyboardButton(text='go', callback_data='proceed')
         menu = InlineKeyboardMarkup(inline_keyboard=[[btn]])
         await message.answer(
@@ -92,8 +92,8 @@ async def __start_callback(callback_query: types.CallbackQuery, state: FSMContex
             await bot.edit_message_text(f'''Добро пожаловать в бот команды.\n\nВаш статус: {d[result[0][0]]}''', cid, mid,
                                  reply_markup=menu)
     else:
-        cursor.execute('INSERT INTO users (uid, status) VALUES (?, ?)', (callback_query.from_user.id, 0))
-        
+        cursor.execute('INSERT INTO users (uid, status, username) VALUES (?, ?, ?)', (callback_query.from_user.id, 0, callback_query.from_user.username if callback_query.from_user.username is not None else ''))
+        conn.commit()
         btn = InlineKeyboardButton(text='go', callback_data='proceed')
         menu = InlineKeyboardMarkup(inline_keyboard=[[btn]])
         await bot.edit_message_text(
@@ -142,7 +142,7 @@ async def __finalauthorization(message: types.Message, state: FSMContext):
 async def __approve(callback_query: types.CallbackQuery, state: FSMContext):
     cursor.execute('UPDATE users SET status=2 WHERE uid=? ', (int(callback_query.data.replace('appr', '')),))
     conn.commit()
-    await bot.send_message(int(callback_query.data.replace('appr', '')), "Заявка подтверждена.")
+    await bot.send_message(int(callback_query.data.replace('appr', '')), "Заявка подтверждена. Напишите /start")
     await bot.edit_message_text(callback_query.message.text + "\nЗаявка подтверждена.", -4017721930, callback_query.message.message_id)
     
 @router.callback_query(lambda c: 'decl' in c.data)
@@ -166,12 +166,15 @@ async def __adminpanel(callback_query: types.CallbackQuery, state: FSMContext):
     cursor.execute('SELECT status FROM users WHERE uid = ?', (callback_query.from_user.id,))
     result = cursor.fetchall()
     if result[0][0] == 6:
-        users = cursor.execute('SELECT uid, status FROM users').fetchall()
+        users = cursor.execute('SELECT uid, status, username FROM users').fetchall()
         buttons = [list() for i in range(len(users))]
         i = 0
         for user in users:
             if user[1] != 0:
-                buttons[i // 3].append(InlineKeyboardButton(text=str(user[0]), callback_data=f'user{user[0]}'))
+                if user[2] != '':
+                    buttons[i // 3].append(InlineKeyboardButton(text=user[2], callback_data=f'user{user[0]}'))
+                else:
+                    buttons[i // 3].append(InlineKeyboardButton(text=str(user[0]), callback_data=f'user{user[0]}'))
                 i += 1
         markup = InlineKeyboardMarkup(inline_keyboard=buttons+[[InlineKeyboardButton(text='Назад', callback_data='admin_panel')]])
         await bot.edit_message_text("Пользователи", callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)
@@ -186,8 +189,8 @@ async def __userinfo(callback_query: types.CallbackQuery, state: FSMContext):
                    [InlineKeyboardButton(text='Заблокировать пользователя', callback_data=f'block{id}')],
                    [InlineKeyboardButton(text='Назад', callback_data='usrscheck')]]
         markup = InlineKeyboardMarkup(inline_keyboard=buttons)
-        status = cursor.execute('SELECT status FROM users WHERE uid = ?', (id,)).fetchone()[0]
-        await bot.edit_message_text(f'''Пользователь ID: {id}\nСтатус пользователя: {d[status]}''', callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)
+        dt = cursor.execute('SELECT id, status FROM users WHERE uid = ?', (id,)).fetchone()
+        await bot.edit_message_text(f'''Пользователь №{dt[0]}\n\nID: {id}\nСтатус пользователя: {d[dt[1]]}''', callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)
 
 @router.callback_query(lambda c: 'block' in c.data)
 async def __blockuser(callback_query: types.CallbackQuery, state: FSMContext):
