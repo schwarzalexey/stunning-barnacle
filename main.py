@@ -242,8 +242,9 @@ async def __userinfo(callback_query: types.CallbackQuery, state: FSMContext):
                    [InlineKeyboardButton(text='Заблокировать пользователя', callback_data=f'block{id}')],
                    [InlineKeyboardButton(text='⬅️Назад', callback_data='usrscheck')]]
         markup = InlineKeyboardMarkup(inline_keyboard=buttons)
-        dt = cursor.execute('SELECT id, status FROM users WHERE uid = ?', (id,)).fetchone()
-        await bot.edit_message_text(f'''Пользователь №{dt[0]}\n\nID: {id}\nСтатус пользователя: {d[dt[1]]}''', callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)
+        dt = cursor.execute('SELECT id, status, tag FROM users WHERE uid = ?', (id,)).fetchone()
+
+        await bot.edit_message_text(f'''Пользователь №{dt[0]}\n\nID: {id}\nСтатус пользователя: {d[dt[1]]}\nТег пользователя: <code>#{dt[2]}</code>''', callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)
 
 @router.callback_query(lambda c: 'block' in c.data)
 async def __blockuser(callback_query: types.CallbackQuery, state: FSMContext):
