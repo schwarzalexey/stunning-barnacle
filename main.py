@@ -182,8 +182,7 @@ async def __settpanel(callback_query: types.CallbackQuery, state: FSMContext):
 @router.callback_query(lambda c: 'tagchng' in c.data)
 async def __settpanel(callback_query: types.CallbackQuery, state: FSMContext):
     tag = cursor.execute("select tag from users where uid=?", (callback_query.from_user.id,)).fetchone()[0]
-    markup = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='⬅️Назад', callback_data='go_start')]])
-    await bot.edit_message_text(f"Ваш текущий тэг: <code>#{tag}</code>\n\nВведите новый тэг:", callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)
+    await bot.edit_message_text(f"Ваш текущий тэг: <code>#{tag}</code>\n\nВведите новый тэг:", callback_query.from_user.id, callback_query.message.message_id)
     await state.set_state(ChangeTag.tag)
     
 @router.message(ChangeTag.tag, F.text.not_in(list(map(lambda x: x[0], cursor.execute("select tag from users").fetchall()))))
@@ -195,8 +194,7 @@ async def __tagsuccess(message: types.Message, state: FSMContext):
 
 @router.message(ChangeTag.tag)
 async def __tagfailure(message: types.Message, state: FSMContext):
-    markup = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='⬅️Назад', callback_data='go_start')]])
-    await bot.send_message(message.from_user.id, "Такой тэг уже используется другим пользователем. Пожалуйста, введите другой тэг:", reply_markup=markup)
+    await bot.send_message(message.from_user.id, "Такой тэг уже используется другим пользователем. Пожалуйста, введите другой тэг:")
 
 @router.callback_query(lambda c: c.data == 'usrscheck')
 async def __adminpanel(callback_query: types.CallbackQuery, state: FSMContext):
