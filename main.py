@@ -2,6 +2,8 @@ import asyncio
 import logging
 import sys
 import sqlite3
+import random
+import string
 from os import getenv
 
 from aiogram import Bot, Dispatcher, Router, types
@@ -38,7 +40,7 @@ class CreateUser(StatesGroup):
 
 @router.message(CommandStart())
 async def __start(message: Message, state: FSMContext) -> None:
-    cursor.execute('SELECT status FROM users WHERE uid = ?', (message.from_user.id,))
+    cursor.execute('SELECT status, tag FROM users WHERE uid = ?', (message.from_user.id,))
     result = cursor.fetchall()
     if result:
         if result[0][0] == -1:
@@ -58,11 +60,17 @@ async def __start(message: Message, state: FSMContext) -> None:
                 admin_panel = InlineKeyboardButton(text='🖥 Админ-панель', callback_data='admin_panel')
                 menu = InlineKeyboardMarkup(inline_keyboard=[[listings], [settings], [chats], [admin_panel]])
             else:
-                menu = InlineKeyboardMarkup(inline_keyboard=[[]])
-            await message.answer(f'<b>💪🏻 СЛОВО ПАЦАНА GROUP\n\n#️⃣ Тэг: TODO\n📯 Статус: <code>{d[result[0][0]]}</code>\n📂 Объявлений: <code>TODO</code>\n💰 Сумма профитов: <code>TODO</code>\n📈 Количество профитов: <code>TODO</code>\n👨‍🏫 Наставник: TODO, ?%\n👨🏻 Оператор: TODO, ?%</b>',
+                settings = InlineKeyboardButton(text='⚙️ Настройки', callback_data='admin_panel')
+                chats = InlineKeyboardButton(text='💬 Чаты', callback_data='admin_panel')
+                listings = InlineKeyboardButton(text='📂 Обьявления', callback_data='admin_panel')
+                menu = InlineKeyboardMarkup(inline_keyboard=[[listings], [settings], [chats]])
+            await message.answer(f'<b>💪🏻 СЛОВО ПАЦАНА GROUP\n\n#️⃣ Тэг: #{result[0][1]}\n📯 Статус: <code>{d[result[0][0]]}</code>\n📂 Объявлений: <code>TODO</code>\n💰 Сумма профитов: <code>TODO</code>\n📈 Количество профитов: <code>TODO</code>\n👨‍🏫 Наставник: TODO, ?%\n👨🏻 Оператор: TODO, ?%</b>',
                                  reply_markup=menu)
     else:
-        cursor.execute('INSERT INTO users (uid, status, username) VALUES (?, ?, ?)', (message.from_user.id, 0, message.from_user.username if message.from_user.username is not None else ''))
+        cursor.execute('INSERT INTO users (uid, status, username, tag) VALUES (?, ?, ?, ?)', (message.from_user.id,
+                                                                                              0,
+                                                                                              message.from_user.username if message.from_user.username is not None else '',
+                                                                                              ''.join(random.choice(string.ascii_letters) for i in range(8))))
         conn.commit()
         btn = InlineKeyboardButton(text='go', callback_data='proceed')
         menu = InlineKeyboardMarkup(inline_keyboard=[[btn]])
@@ -72,7 +80,7 @@ async def __start(message: Message, state: FSMContext) -> None:
         
 @router.callback_query(lambda c: c.data == 'go_start')
 async def __start_callback(callback_query: types.CallbackQuery, state: FSMContext) -> None:
-    cursor.execute('SELECT status FROM users WHERE uid = ?', (callback_query.from_user.id,))
+    cursor.execute('SELECT status, tag FROM users WHERE uid = ?', (callback_query.from_user.id,))
     result = cursor.fetchall()
     cid = callback_query.message.chat.id
     mid = callback_query.message.message_id
@@ -94,17 +102,12 @@ async def __start_callback(callback_query: types.CallbackQuery, state: FSMContex
                 admin_panel = InlineKeyboardButton(text='🖥 Админ-панель', callback_data='admin_panel')
                 menu = InlineKeyboardMarkup(inline_keyboard=[[listings], [settings], [chats], [admin_panel]])
             else:
-                menu = InlineKeyboardMarkup(inline_keyboard=[[]])
-            await bot.edit_message_text(f'<b>💪🏻 СЛОВО ПАЦАНА GROUP\n\n#️⃣ Тэг: TODO\n📯 Статус: <code>{d[result[0][0]]}</code>\n📂 Объявлений: <code>TODO</code>\n💰 Сумма профитов: <code>TODO</code>\n📈 Количество профитов: <code>TODO</code>\n👨‍🏫 Наставник: TODO, ?%\n👨🏻 Оператор: TODO, ?%</b>', cid, mid,
+                settings = InlineKeyboardButton(text='⚙️ Настройки', callback_data='admin_panel')
+                chats = InlineKeyboardButton(text='💬 Чаты', callback_data='admin_panel')
+                listings = InlineKeyboardButton(text='📂 Обьявления', callback_data='admin_panel')
+                menu = InlineKeyboardMarkup(inline_keyboard=[[listings], [settings], [chats]])
+            await bot.edit_message_text(f'<b>💪🏻 СЛОВО ПАЦАНА GROUP\n\n#️⃣ Тэг: {result[0][1]}\n📯 Статус: <code>{d[result[0][0]]}</code>\n📂 Объявлений: <code>TODO</code>\n💰 Сумма профитов: <code>TODO</code>\n📈 Количество профитов: <code>TODO</code>\n👨‍🏫 Наставник: TODO, ?%\n👨🏻 Оператор: TODO, ?%</b>', cid, mid,
                                  reply_markup=menu)
-    else:
-        cursor.execute('INSERT INTO users (uid, status, username) VALUES (?, ?, ?)', (callback_query.from_user.id, 0, callback_query.from_user.username if callback_query.from_user.username is not None else ''))
-        conn.commit()
-        btn = InlineKeyboardButton(text='go', callback_data='proceed')
-        menu = InlineKeyboardMarkup(inline_keyboard=[[btn]])
-        await bot.edit_message_text(
-            'Добро пожаловать.\nПеред тем, как начать работать с нами, Вам нужно будет ответить на несколько вопросов.\nВы готовы?', cid, mid,
-            reply_markup=menu)
 
 @router.callback_query(lambda c: c.data == 'proceed')
 async def __proceed(callback_query: types.CallbackQuery, state: FSMContext):
