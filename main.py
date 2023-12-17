@@ -45,6 +45,10 @@ class ChangeTag(StatesGroup):
 async def __start(message: Message, state: FSMContext) -> None:
     cursor.execute('SELECT status, tag FROM users WHERE uid = ?', (message.from_user.id,))
     result = cursor.fetchall()
+    settings = InlineKeyboardButton(text='⚙️ Настройки', callback_data='settings')
+    chats = InlineKeyboardButton(text='💬 Чаты', callback_data='chats')
+    listings = InlineKeyboardButton(text='📂 Обьявления', callback_data='admin_panel')
+    admin_panel = InlineKeyboardButton(text='🖥 Админ-панель', callback_data='admin_panel')
     if result:
         if result[0][0] == -1:
             await message.answer('<b>❌ Вы заблокированы ❌</b>')
@@ -57,15 +61,8 @@ async def __start(message: Message, state: FSMContext) -> None:
             await message.answer('Добро пожаловать. В данный момент, ваша заявка находится в обработке. Пожалуйста, ожидайте.')
         else:
             if result[0][0] == 6:
-                settings = InlineKeyboardButton(text='⚙️ Настройки', callback_data='settings')
-                chats = InlineKeyboardButton(text='💬 Чаты', callback_data='admin_panel')
-                listings = InlineKeyboardButton(text='📂 Обьявления', callback_data='admin_panel')
-                admin_panel = InlineKeyboardButton(text='🖥 Админ-панель', callback_data='admin_panel')
                 menu = InlineKeyboardMarkup(inline_keyboard=[[listings], [settings], [chats], [admin_panel]])
             else:
-                settings = InlineKeyboardButton(text='⚙️ Настройки', callback_data='settings')
-                chats = InlineKeyboardButton(text='💬 Чаты', callback_data='admin_panel')
-                listings = InlineKeyboardButton(text='📂 Обьявления', callback_data='admin_panel')
                 menu = InlineKeyboardMarkup(inline_keyboard=[[listings], [settings], [chats]])
             await message.answer(f'<b>💪🏻 СЛОВО ПАЦАНА GROUP\n\n#️⃣ Тэг: <code>#{result[0][1]}</code>\n📯 Статус: <code>{d[result[0][0]]}</code>\n📂 Объявлений: <code>TODO</code>\n💰 Сумма профитов: <code>TODO</code>\n📈 Количество профитов: <code>TODO</code>\n👨‍🏫 Наставник: TODO, ?%\n👨🏻 Оператор: TODO, ?%</b>',
                                  reply_markup=menu)
@@ -87,6 +84,10 @@ async def __start_callback(callback_query: types.CallbackQuery, state: FSMContex
     result = cursor.fetchall()
     cid = callback_query.message.chat.id
     mid = callback_query.message.message_id
+    settings = InlineKeyboardButton(text='⚙️ Настройки', callback_data='settings')
+    chats = InlineKeyboardButton(text='💬 Чаты', callback_data='chats')
+    listings = InlineKeyboardButton(text='📂 Обьявления', callback_data='admin_panel')
+    admin_panel = InlineKeyboardButton(text='🖥 Админ-панель', callback_data='admin_panel')
     if result:
         if result[0][0] == -1:
             await bot.edit_message_text('<b>❌ Вы заблокированы ❌</b>', cid, mid)
@@ -99,15 +100,8 @@ async def __start_callback(callback_query: types.CallbackQuery, state: FSMContex
             await bot.edit_message_text('Добро пожаловать. В данный момент, ваша заявка находится в обработке. Пожалуйста, ожидайте.', cid, mid)
         else:
             if result[0][0] == 6:
-                settings = InlineKeyboardButton(text='⚙️ Настройки', callback_data='settings')
-                chats = InlineKeyboardButton(text='💬 Чаты', callback_data='admin_panel')
-                listings = InlineKeyboardButton(text='📂 Обьявления', callback_data='admin_panel')
-                admin_panel = InlineKeyboardButton(text='🖥 Админ-панель', callback_data='admin_panel')
                 menu = InlineKeyboardMarkup(inline_keyboard=[[listings], [settings], [chats], [admin_panel]])
             else:
-                settings = InlineKeyboardButton(text='⚙️ Настройки', callback_data='settings')
-                chats = InlineKeyboardButton(text='💬 Чаты', callback_data='admin_panel')
-                listings = InlineKeyboardButton(text='📂 Обьявления', callback_data='admin_panel')
                 menu = InlineKeyboardMarkup(inline_keyboard=[[listings], [settings], [chats]])
             await bot.edit_message_text(f'<b>💪🏻 СЛОВО ПАЦАНА GROUP\n\n#️⃣ Тэг: <code>#{result[0][1]}</code>\n📯 Статус: <code>{d[result[0][0]]}</code>\n📂 Объявлений: <code>TODO</code>\n💰 Сумма профитов: <code>TODO</code>\n📈 Количество профитов: <code>TODO</code>\n👨‍🏫 Наставник: TODO, ?%\n👨🏻 Оператор: TODO, ?%</b>', cid, mid,
                                  reply_markup=menu)
@@ -172,6 +166,13 @@ async def __adminpanel(callback_query: types.CallbackQuery, state: FSMContext):
         users = InlineKeyboardButton(text='Пользователи', callback_data='usrscheck')
         markup = InlineKeyboardMarkup(inline_keyboard=[[users]] + [[InlineKeyboardButton(text='⬅️Назад', callback_data='go_start')]])
         await bot.edit_message_text("<b>🖥 Админ-панель</b>", callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)
+
+@router.callback_query(lambda c: 'chats' in c.data)
+async def __chatpanel(callback_query: types.CallbackQuery, state: FSMContext):
+    chatwork = InlineKeyboardButton(text='Чат воркеров', url='https://t.me/+hxjypzMr3O9jZjQ0')
+    chatprofit = InlineKeyboardButton(text='Канал выплат', url='https://t.me/+od_rBY99YwNiNTJk')
+    markup = InlineKeyboardMarkup(inline_keyboard=[[chatwork, chatprofit]] + [[InlineKeyboardButton(text='⬅️Назад', callback_data='go_start')]])
+    await bot.edit_message_text("💬 Чаты", callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)
     
 @router.callback_query(lambda c: 'settings' in c.data)
 async def __settpanel(callback_query: types.CallbackQuery, state: FSMContext):
