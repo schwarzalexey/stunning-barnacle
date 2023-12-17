@@ -47,7 +47,7 @@ async def __start(message: Message, state: FSMContext) -> None:
     result = cursor.fetchall()
     settings = InlineKeyboardButton(text='⚙️ Настройки', callback_data='settings')
     chats = InlineKeyboardButton(text='💬 Чаты', callback_data='chats')
-    listings = InlineKeyboardButton(text='📂 Обьявления', callback_data='admin_panel')
+    listings = InlineKeyboardButton(text='📂 Обьявления', callback_data='listings')
     admin_panel = InlineKeyboardButton(text='🖥 Админ-панель', callback_data='admin_panel')
     if result:
         if result[0][0] == -1:
@@ -61,15 +61,8 @@ async def __start(message: Message, state: FSMContext) -> None:
             await message.answer('Добро пожаловать. В данный момент, ваша заявка находится в обработке. Пожалуйста, ожидайте.')
         else:
             if result[0][0] == 6:
-                settings = InlineKeyboardButton(text='⚙️ Настройки', callback_data='settings')
-                chats = InlineKeyboardButton(text='💬 Чаты', callback_data='admin_panel')
-                listings = InlineKeyboardButton(text='📂 Обьявления', callback_data='admin_panel')
-                admin_panel = InlineKeyboardButton(text='🖥 Админ-панель', callback_data='admin_panel')
                 menu = InlineKeyboardMarkup(inline_keyboard=[[listings], [settings], [chats], [admin_panel]])
             else:
-                settings = InlineKeyboardButton(text='⚙️ Настройки', callback_data='settings')
-                chats = InlineKeyboardButton(text='💬 Чаты', callback_data='admin_panel')
-                listings = InlineKeyboardButton(text='📂 Обьявления', callback_data='admin_panel')
                 menu = InlineKeyboardMarkup(inline_keyboard=[[listings], [settings], [chats]])
             await message.answer(f'<b>💪🏻 СЛОВО ПАЦАНА GROUP\n\n#️⃣ Тэг: <code>#{result[0][1]}</code>\n📯 Статус: <code>{d[result[0][0]]}</code>\n📂 Объявлений: <code>TODO</code>\n💰 Сумма профитов: <code>TODO</code>\n📈 Количество профитов: <code>TODO</code>\n👨‍🏫 Наставник: TODO, ?%\n👨🏻 Оператор: TODO, ?%</b>',
                                  reply_markup=menu)
@@ -93,7 +86,7 @@ async def __start_callback(callback_query: types.CallbackQuery, state: FSMContex
     mid = callback_query.message.message_id
     settings = InlineKeyboardButton(text='⚙️ Настройки', callback_data='settings')
     chats = InlineKeyboardButton(text='💬 Чаты', callback_data='chats')
-    listings = InlineKeyboardButton(text='📂 Обьявления', callback_data='admin_panel')
+    listings = InlineKeyboardButton(text='📂 Обьявления', callback_data='listings')
     admin_panel = InlineKeyboardButton(text='🖥 Админ-панель', callback_data='admin_panel')
     if result:
         if result[0][0] == -1:
@@ -107,18 +100,18 @@ async def __start_callback(callback_query: types.CallbackQuery, state: FSMContex
             await bot.edit_message_text('Добро пожаловать. В данный момент, ваша заявка находится в обработке. Пожалуйста, ожидайте.', cid, mid)
         else:
             if result[0][0] == 6:
-                settings = InlineKeyboardButton(text='⚙️ Настройки', callback_data='settings')
-                chats = InlineKeyboardButton(text='💬 Чаты', callback_data='admin_panel')
-                listings = InlineKeyboardButton(text='📂 Обьявления', callback_data='admin_panel')
-                admin_panel = InlineKeyboardButton(text='🖥 Админ-панель', callback_data='admin_panel')
                 menu = InlineKeyboardMarkup(inline_keyboard=[[listings], [settings], [chats], [admin_panel]])
             else:
-                settings = InlineKeyboardButton(text='⚙️ Настройки', callback_data='settings')
-                chats = InlineKeyboardButton(text='💬 Чаты', callback_data='admin_panel')
-                listings = InlineKeyboardButton(text='📂 Обьявления', callback_data='admin_panel')
                 menu = InlineKeyboardMarkup(inline_keyboard=[[listings], [settings], [chats]])
             await bot.edit_message_text(f'<b>💪🏻 СЛОВО ПАЦАНА GROUP\n\n#️⃣ Тэг: <code>#{result[0][1]}</code>\n📯 Статус: <code>{d[result[0][0]]}</code>\n📂 Объявлений: <code>TODO</code>\n💰 Сумма профитов: <code>TODO</code>\n📈 Количество профитов: <code>TODO</code>\n👨‍🏫 Наставник: TODO, ?%\n👨🏻 Оператор: TODO, ?%</b>', cid, mid,
                                  reply_markup=menu)
+
+@router.callback_query(lambda c: 'chats' in c.data)
+async def __chatpanel(callback_query: types.CallbackQuery, state: FSMContext):
+    chatwork = InlineKeyboardButton(text='Чат воркеров', url='https://t.me/+hxjypzMr3O9jZjQ0')
+    chatprofit = InlineKeyboardButton(text='Канал выплат', url='https://t.me/+od_rBY99YwNiNTJk')
+    markup = InlineKeyboardMarkup(inline_keyboard=[[chatwork, chatprofit]] + [[InlineKeyboardButton(text='⬅️Назад', callback_data='go_start')]])
+    await bot.edit_message_text("💬 Чаты", callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)
 
 @router.callback_query(lambda c: c.data == 'listings')
 async def __listings(callback_query: types.CallbackQuery, state: FSMContext):
@@ -131,8 +124,6 @@ async def __listings(callback_query: types.CallbackQuery, state: FSMContext):
     markup = InlineKeyboardMarkup(inline_keyboard=buttons + [[InlineKeyboardButton(text='⬅️Назад', callback_data='go_start')]])
     await bot.edit_message_text('''Ваши обьявления''', cid, mid, reply_markup=markup)
     await state.set_state(CreateUser.question1)
-
-# ----------------- Заявки
 
 @router.callback_query(lambda c: c.data == 'proceed')
 async def __proceed(callback_query: types.CallbackQuery, state: FSMContext):
@@ -186,8 +177,6 @@ async def __decline(callback_query: types.CallbackQuery, state: FSMContext):
     await bot.send_message(int(callback_query.data.replace('decl', '')), "Заявка отклонена.")
     await bot.edit_message_text(callback_query.message.text + "\nЗаявка отклонена.", -4017721930, callback_query.message.message_id)
     
-# ------------------ ADMIN PANEL
-    
 @router.callback_query(lambda c: 'admin_panel' in c.data)
 async def __adminpanel(callback_query: types.CallbackQuery, state: FSMContext):
     cursor.execute('SELECT status FROM users WHERE uid = ?', (callback_query.from_user.id,))
@@ -219,8 +208,6 @@ async def __tagsuccess(message: types.Message, state: FSMContext):
 @router.message(ChangeTag.tag)
 async def __tagfailure(message: types.Message, state: FSMContext):
     await bot.send_message(message.from_user.id, "Такой тэг уже используется другим пользователем. Пожалуйста, введите другой тэг:")
-
-# ------------------ USERS
 
 @router.callback_query(lambda c: 'usrscheck' in c.data )
 async def __adminpanel(callback_query: types.CallbackQuery, state: FSMContext):
