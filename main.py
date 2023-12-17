@@ -52,8 +52,11 @@ async def __start(message: Message, state: FSMContext) -> None:
             await message.answer('Добро пожаловать. В данный момент, ваша заявка находится в обработке. Пожалуйста, ожидайте.')
         else:
             if result[0][0] == 6:
-                admin_panel = InlineKeyboardButton(text='Админ-панель', callback_data='admin_panel')
-                menu = InlineKeyboardMarkup(inline_keyboard=[[admin_panel]])
+                settings = InlineKeyboardButton(text='⚙️ Настройки', callback_data='admin_panel')
+                chats = InlineKeyboardButton(text='💬 Чаты', callback_data='admin_panel')
+                listings = InlineKeyboardButton(text='📂 Обьявления', callback_data='admin_panel')
+                admin_panel = InlineKeyboardButton(text='🖥 Админ-панель', callback_data='admin_panel')
+                menu = InlineKeyboardMarkup(inline_keyboard=[[listings], [settings], [chats], [admin_panel]])
             else:
                 menu = InlineKeyboardMarkup(inline_keyboard=[[]])
             await message.answer(f'<b>💪🏻 СЛОВО ПАЦАНА GROUP\n\n#️⃣ Тэг: TODO\n📯 Статус: <code>{d[result[0][0]]}</code>\n📂 Объявлений: <code>TODO</code>\n💰 Сумма профитов: <code>TODO</code>\n📈 Количество профитов: <code>TODO</code>\n👨‍🏫 Наставник: TODO, ?%\n👨🏻 Оператор: TODO, ?%</b>',
@@ -85,11 +88,14 @@ async def __start_callback(callback_query: types.CallbackQuery, state: FSMContex
             await bot.edit_message_text('Добро пожаловать. В данный момент, ваша заявка находится в обработке. Пожалуйста, ожидайте.', cid, mid)
         else:
             if result[0][0] == 6:
-                admin_panel = InlineKeyboardButton(text='Админ-панель', callback_data='admin_panel')
-                menu = InlineKeyboardMarkup(inline_keyboard=[[admin_panel]])
+                settings = InlineKeyboardButton(text='⚙️ Настройки', callback_data='admin_panel')
+                chats = InlineKeyboardButton(text='💬 Чаты', callback_data='admin_panel')
+                listings = InlineKeyboardButton(text='📂 Обьявления', callback_data='admin_panel')
+                admin_panel = InlineKeyboardButton(text='🖥 Админ-панель', callback_data='admin_panel')
+                menu = InlineKeyboardMarkup(inline_keyboard=[[listings], [settings], [chats], [admin_panel]])
             else:
                 menu = InlineKeyboardMarkup(inline_keyboard=[[]])
-            await bot.edit_message_text(f'''Добро пожаловать в бот команды.\n\nВаш статус: {d[result[0][0]]}''', cid, mid,
+            await bot.edit_message_text(f'<b>💪🏻 СЛОВО ПАЦАНА GROUP\n\n#️⃣ Тэг: TODO\n📯 Статус: <code>{d[result[0][0]]}</code>\n📂 Объявлений: <code>TODO</code>\n💰 Сумма профитов: <code>TODO</code>\n📈 Количество профитов: <code>TODO</code>\n👨‍🏫 Наставник: TODO, ?%\n👨🏻 Оператор: TODO, ?%</b>', cid, mid,
                                  reply_markup=menu)
     else:
         cursor.execute('INSERT INTO users (uid, status, username) VALUES (?, ?, ?)', (callback_query.from_user.id, 0, callback_query.from_user.username if callback_query.from_user.username is not None else ''))
@@ -158,8 +164,8 @@ async def __adminpanel(callback_query: types.CallbackQuery, state: FSMContext):
     result = cursor.fetchall()
     if result[0][0] == 6:
         users = InlineKeyboardButton(text='Пользователи', callback_data='usrscheck')
-        markup = InlineKeyboardMarkup(inline_keyboard=[[users]] + [[InlineKeyboardButton(text='Назад', callback_data='go_start')]])
-        await bot.edit_message_text("Админ-панель", callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)
+        markup = InlineKeyboardMarkup(inline_keyboard=[[users]] + [[InlineKeyboardButton(text='⬅️Назад', callback_data='go_start')]])
+        await bot.edit_message_text("<b>🖥 Админ-панель</b>", callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)
 
 @router.callback_query(lambda c: c.data == 'usrscheck')
 async def __adminpanel(callback_query: types.CallbackQuery, state: FSMContext):
@@ -179,7 +185,7 @@ async def __adminpanel(callback_query: types.CallbackQuery, state: FSMContext):
         pages = []
         for i in range(0, len(buttons), 10):
             pages.append(buttons[i: i + 10])
-        markup = InlineKeyboardMarkup(inline_keyboard=pages[0]+[[InlineKeyboardButton(text='Назад', callback_data='admin_panel')]])
+        markup = InlineKeyboardMarkup(inline_keyboard=pages[0]+[[InlineKeyboardButton(text='⬅️Назад', callback_data='admin_panel')]])
         await bot.edit_message_text("Пользователи", callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)
 
 @router.callback_query(lambda c: 'user' in c.data)
@@ -190,7 +196,7 @@ async def __userinfo(callback_query: types.CallbackQuery, state: FSMContext):
         id = int(callback_query.data.replace("user", ''))
         buttons = [[InlineKeyboardButton(text='Обновить статус', callback_data=f'update{id}')],
                    [InlineKeyboardButton(text='Заблокировать пользователя', callback_data=f'block{id}')],
-                   [InlineKeyboardButton(text='Назад', callback_data='usrscheck')]]
+                   [InlineKeyboardButton(text='⬅️Назад', callback_data='usrscheck')]]
         markup = InlineKeyboardMarkup(inline_keyboard=buttons)
         dt = cursor.execute('SELECT id, status FROM users WHERE uid = ?', (id,)).fetchone()
         await bot.edit_message_text(f'''Пользователь №{dt[0]}\n\nID: {id}\nСтатус пользователя: {d[dt[1]]}''', callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)
@@ -201,12 +207,12 @@ async def __blockuser(callback_query: types.CallbackQuery, state: FSMContext):
     result = cursor.fetchall()
     if result[0][0] == 6:
         id = int(callback_query.data.replace("block", ''))
-        buttons = [[InlineKeyboardButton(text='Назад', callback_data=f'user{id}')]]
+        buttons = [[InlineKeyboardButton(text='⬅️Назад', callback_data=f'user{id}')]]
         markup = InlineKeyboardMarkup(inline_keyboard=buttons)
         cursor.execute('update users set status=-1 where uid=? ', (id,))
         conn.commit()
-        await bot.send_message(id, "Вы были заблокированы в этом боте.")
-        await bot.edit_message_text(f'''Пользователь успешно заблокирован''', callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)    
+        await bot.send_message(id, "<b>❌ Вы заблокированы ❌</b>")
+        await bot.edit_message_text(f'''Пользователь заблокирован''', callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)    
         
 @router.callback_query(lambda c: 'update' in c.data)
 async def __updateuser(callback_query: types.CallbackQuery, state: FSMContext):
@@ -219,7 +225,7 @@ async def __updateuser(callback_query: types.CallbackQuery, state: FSMContext):
                    [InlineKeyboardButton(text='Оператор', callback_data=f'__opr{id}')],
                    [InlineKeyboardButton(text='Наставник', callback_data=f'__nast{id}')],
                    [InlineKeyboardButton(text='Администратор', callback_data=f'__adm{id}')],
-                   [InlineKeyboardButton(text='Назад', callback_data=f'user{id}')]]
+                   [InlineKeyboardButton(text='⬅️Назад', callback_data=f'user{id}')]]
         markup = InlineKeyboardMarkup(inline_keyboard=buttons)
         await bot.edit_message_text(f'''Выберите статус для пользователя ID: {id}''', callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)
 
@@ -229,7 +235,7 @@ async def __workuser(callback_query: types.CallbackQuery, state: FSMContext):
     result = cursor.fetchall()
     if result[0][0] == 6:
         id = int(callback_query.data.replace("__work", ''))
-        buttons = [[InlineKeyboardButton(text='Назад', callback_data=f'user{id}')]]
+        buttons = [[InlineKeyboardButton(text='⬅️Назад', callback_data=f'user{id}')]]
         markup = InlineKeyboardMarkup(inline_keyboard=buttons)
         cursor.execute('update users set status=2 where uid=? ', (id,))
         conn.commit()
@@ -242,7 +248,7 @@ async def __vbvuser(callback_query: types.CallbackQuery, state: FSMContext):
     result = cursor.fetchall()
     if result[0][0] == 6:
         id = int(callback_query.data.replace("__vbv", ''))
-        buttons = [[InlineKeyboardButton(text='Назад', callback_data=f'user{id}')]]
+        buttons = [[InlineKeyboardButton(text='⬅️Назад', callback_data=f'user{id}')]]
         markup = InlineKeyboardMarkup(inline_keyboard=buttons)
         cursor.execute('update users set status=3 where uid=? ', (id,))
         conn.commit()
@@ -255,7 +261,7 @@ async def __opruser(callback_query: types.CallbackQuery, state: FSMContext):
     result = cursor.fetchall()
     if result[0][0] == 6:
         id = int(callback_query.data.replace("__opr", ''))
-        buttons = [[InlineKeyboardButton(text='Назад', callback_data=f'user{id}')]]
+        buttons = [[InlineKeyboardButton(text='⬅️Назад', callback_data=f'user{id}')]]
         markup = InlineKeyboardMarkup(inline_keyboard=buttons)
         cursor.execute('update users set status=4 where uid=? ', (id,))
         conn.commit()
@@ -268,7 +274,7 @@ async def __nastuser(callback_query: types.CallbackQuery, state: FSMContext):
     result = cursor.fetchall()
     if result[0][0] == 6:
         id = int(callback_query.data.replace("__nast", ''))
-        buttons = [[InlineKeyboardButton(text='Назад', callback_data=f'user{id}')]]
+        buttons = [[InlineKeyboardButton(text='⬅️Назад', callback_data=f'user{id}')]]
         markup = InlineKeyboardMarkup(inline_keyboard=buttons)
         cursor.execute('update users set status=5 where uid=? ', (id,))
         conn.commit()
@@ -281,7 +287,7 @@ async def __admuser(callback_query: types.CallbackQuery, state: FSMContext):
     result = cursor.fetchall()
     if result[0][0] == 6:
         id = int(callback_query.data.replace("__adm", ''))
-        buttons = [[InlineKeyboardButton(text='Назад', callback_data=f'user{id}')]]
+        buttons = [[InlineKeyboardButton(text='⬅️Назад', callback_data=f'user{id}')]]
         markup = InlineKeyboardMarkup(inline_keyboard=buttons)
         cursor.execute('update users set status=6 where uid=? ', (id,))
         conn.commit()
