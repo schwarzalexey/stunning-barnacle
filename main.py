@@ -176,7 +176,10 @@ async def __adminpanel(callback_query: types.CallbackQuery, state: FSMContext):
                 else:
                     buttons[i // 3].append(InlineKeyboardButton(text=str(user[0]), callback_data=f'user{user[0]}'))
                 i += 1
-        markup = InlineKeyboardMarkup(inline_keyboard=buttons+[[InlineKeyboardButton(text='Назад', callback_data='admin_panel')]])
+        pages = []
+        for i in range(0, len(buttons), 10):
+            pages.append(buttons[i: i + 10])
+        markup = InlineKeyboardMarkup(inline_keyboard=pages[0]+[[InlineKeyboardButton(text='Назад', callback_data='admin_panel')]])
         await bot.edit_message_text("Пользователи", callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)
 
 @router.callback_query(lambda c: 'user' in c.data)
