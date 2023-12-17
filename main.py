@@ -42,11 +42,11 @@ async def __start(message: Message, state: FSMContext) -> None:
     result = cursor.fetchall()
     if result:
         if result[0][0] == -1:
-            await message.answer('Вы заблокированы в этом боте.')
+            await message.answer('<b>❌ Вы заблокированы ❌</b>')
         elif result[0][0] == 0:
             btn = InlineKeyboardButton(text='go', callback_data='proceed')
             menu = InlineKeyboardMarkup(inline_keyboard=[[btn]])
-            await message.answer('Добро пожаловать.\nПеред тем, как начать работать с нами, Вам нужно будет ответить на несколько вопросов.\    Вы готовы?',
+            await message.answer('Добро пожаловать.\nПеред тем, как начать работать с нами, Вам нужно будет ответить на несколько вопросов. Вы готовы?',
                                  reply_markup=menu)
         elif result[0][0] == 1:
             await message.answer('Добро пожаловать. В данный момент, ваша заявка находится в обработке. Пожалуйста, ожидайте.')
@@ -56,7 +56,7 @@ async def __start(message: Message, state: FSMContext) -> None:
                 menu = InlineKeyboardMarkup(inline_keyboard=[[admin_panel]])
             else:
                 menu = InlineKeyboardMarkup(inline_keyboard=[[]])
-            await message.answer(f'''Добро пожаловать в бот команды.\n\nВаш статус: {d[result[0][0]]}''',
+            await message.answer(f'<b>💪🏻 СЛОВО ПАЦАНА GROUP\n\n#️⃣ Тэг: TODO\n📯 Статус: <code>{d[result[0][0]]}</code>\n📂 Объявлений: <code>TODO</code>\n💰 Сумма профитов: <code>TODO</code>\n📈 Количество профитов: <code>TODO</code>\n👨‍🏫 Наставник: TODO, ?%\n👨🏻 Оператор: TODO, ?%</b>',
                                  reply_markup=menu)
     else:
         cursor.execute('INSERT INTO users (uid, status, username) VALUES (?, ?, ?)', (message.from_user.id, 0, message.from_user.username if message.from_user.username is not None else ''))
@@ -75,7 +75,7 @@ async def __start_callback(callback_query: types.CallbackQuery, state: FSMContex
     mid = callback_query.message.message_id
     if result:
         if result[0][0] == -1:
-            await bot.edit_message_text('Вы заблокированы в этом боте.', cid, mid)
+            await bot.edit_message_text('<b>❌ Вы заблокированы ❌</b>', cid, mid)
         elif result[0][0] == 0:
             btn = InlineKeyboardButton(text='go', callback_data='proceed')
             menu = InlineKeyboardMarkup(inline_keyboard=[[btn]])
