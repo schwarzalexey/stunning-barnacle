@@ -51,7 +51,7 @@ async def __start(message: Message, state: FSMContext) -> None:
     admin_panel = InlineKeyboardButton(text='🖥 Админ-панель', callback_data='admin_panel')
     if result:
         if result[0][0] == -1:
-            await message.answer('<b>❌ Вы заблокированы ❌</b>')
+            await message.answer('<b>❌ Вы были заблокированы</b>')
         elif result[0][0] == 0:
             btn = InlineKeyboardButton(text='✅ Я готов!', callback_data='proceed')
             menu = InlineKeyboardMarkup(inline_keyboard=[[btn]])
@@ -262,7 +262,7 @@ async def __blockuser(callback_query: types.CallbackQuery, state: FSMContext):
         markup = InlineKeyboardMarkup(inline_keyboard=buttons)
         cursor.execute('update users set status=-1 where uid=? ', (id,))
         conn.commit()
-        await bot.send_message(id, "<b>❌ Вы заблокированы ❌</b>")
+        await bot.send_message(id, "<b>❌ Вы были заблокированы</b>")
         await bot.ban_chat_member(-4046131412, id)
         await bot.edit_message_text(f'''<b>Пользователь заблокирован</b>''', callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)    
         
