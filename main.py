@@ -179,7 +179,7 @@ async def __approve(callback_query: types.CallbackQuery, state: FSMContext):
 async def __decline(callback_query: types.CallbackQuery, state: FSMContext):
     cursor.execute('update users set status=-1 where uid=? ', (int(callback_query.data.replace('decl', '')),))
     conn.commit()
-    await bot.send_message(int(callback_query.data.replace('decl', '')), "❌ Ваша заявка отклонена.")
+    await bot.send_message(int(callback_query.data.replace('decl', '')), "<b>❌ Ваша заявка отклонена.</b>")
     await bot.edit_message_text(callback_query.message.text + "\n\n❌ Заявка отклонена.", -4017721930, callback_query.message.message_id)
     
 @router.callback_query(lambda c: 'admin_panel' in c.data)
@@ -200,7 +200,7 @@ async def __settpanel(callback_query: types.CallbackQuery, state: FSMContext):
 @router.callback_query(lambda c: 'tagchng' in c.data)
 async def __settpanel(callback_query: types.CallbackQuery, state: FSMContext):
     tag = cursor.execute("select tag from users where uid=?", (callback_query.from_user.id,)).fetchone()[0]
-    await bot.edit_message_text(f"Ваш текущий тэг: <code>#{tag}</code>\n\nВведите новый тэг:", callback_query.from_user.id, callback_query.message.message_id)
+    await bot.edit_message_text(f"<b>Ваш текущий тэг: <code>#{tag}</code>\n\nВведите новый тэг:</b>", callback_query.from_user.id, callback_query.message.message_id)
     await state.set_state(ChangeTag.tag)
     
 @router.message(ChangeTag.tag, F.text.not_in(list(map(lambda x: x[0], cursor.execute("select tag from users").fetchall()))))
@@ -208,12 +208,12 @@ async def __tagsuccess(message: types.Message, state: FSMContext):
     cursor.execute("update users set tag=? where uid=?", (message.text, message.from_user.id))
     conn.commit()
     markup = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='⬅️Назад', callback_data='go_start')]])
-    await bot.send_message(message.from_user.id, "Новый тэг успешно установлен.", reply_markup=markup)
+    await bot.send_message(message.from_user.id, "<b>Новый тэг успешно установлен.</b>", reply_markup=markup)
     await state.clear()
 
 @router.message(ChangeTag.tag)
 async def __tagfailure(message: types.Message, state: FSMContext):
-    await bot.send_message(message.from_user.id, "Такой тэг уже используется другим пользователем. Пожалуйста, введите другой тэг:")
+    await bot.send_message(message.from_user.id, "<b>Такой тэг уже используется другим пользователем. Пожалуйста, введите другой тэг:</b>")
 
 @router.callback_query(lambda c: 'usrscheck' in c.data )
 async def __adminpanel(callback_query: types.CallbackQuery, state: FSMContext):
@@ -250,7 +250,7 @@ async def __userinfo(callback_query: types.CallbackQuery, state: FSMContext):
         markup = InlineKeyboardMarkup(inline_keyboard=buttons)
         dt = cursor.execute('SELECT id, status, tag FROM users WHERE uid = ?', (id,)).fetchone()
 
-        await bot.edit_message_text(f'''Пользователь №{dt[0]}\n\nID: {id}\nСтатус пользователя: {d[dt[1]]}\nТег пользователя: <code>#{dt[2]}</code>''', callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)
+        await bot.edit_message_text(f'''Пользователь №{dt[0]}\n\nID: <code>{id}</code>\nСтатус пользователя: <code>{d[dt[1]]}</code>\nТег пользователя: <code>#{dt[2]}</code>''', callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)
 
 @router.callback_query(lambda c: 'block' in c.data)
 async def __blockuser(callback_query: types.CallbackQuery, state: FSMContext):
@@ -290,8 +290,8 @@ async def __workuser(callback_query: types.CallbackQuery, state: FSMContext):
         markup = InlineKeyboardMarkup(inline_keyboard=buttons)
         cursor.execute('update users set status=2 where uid=? ', (id,))
         conn.commit()
-        await bot.send_message(id, f"Ваш статус изменен на: {d[2]}")
-        await bot.edit_message_text(f'''Статус успешно изменен''', callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)  
+        await bot.send_message(id, f"<b>📈 Ваш статус изменен на: </b><code>{d[2]}</code>")
+        await bot.edit_message_text(f'''<b>Статус изменен</b>''', callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)  
         
 @router.callback_query(lambda c: '__vbv' in c.data)
 async def __vbvuser(callback_query: types.CallbackQuery, state: FSMContext):
@@ -303,8 +303,8 @@ async def __vbvuser(callback_query: types.CallbackQuery, state: FSMContext):
         markup = InlineKeyboardMarkup(inline_keyboard=buttons)
         cursor.execute('update users set status=3 where uid=? ', (id,))
         conn.commit()
-        await bot.send_message(id, f"Ваш статус изменен на: {d[3]}")
-        await bot.edit_message_text(f'''Статус успешно изменен''', callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)  
+        await bot.send_message(id, f"<b>📈 Ваш статус изменен на: </b><code>{d[3]}</code>")
+        await bot.edit_message_text(f'''<b>Статус изменен</b>''', callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)  
         
 @router.callback_query(lambda c: '__opr' in c.data)
 async def __opruser(callback_query: types.CallbackQuery, state: FSMContext):
@@ -316,8 +316,8 @@ async def __opruser(callback_query: types.CallbackQuery, state: FSMContext):
         markup = InlineKeyboardMarkup(inline_keyboard=buttons)
         cursor.execute('update users set status=4 where uid=? ', (id,))
         conn.commit()
-        await bot.send_message(id, f"Ваш статус изменен на: {d[4]}")
-        await bot.edit_message_text(f'''Статус успешно изменен''', callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)  
+        await bot.send_message(id, f"<b>📈 Ваш статус изменен на: </b><code>{d[4]}</code>")
+        await bot.edit_message_text(f'''<b>Статус изменен</b>''', callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)  
         
 @router.callback_query(lambda c: '__nast' in c.data)
 async def __nastuser(callback_query: types.CallbackQuery, state: FSMContext):
@@ -329,8 +329,8 @@ async def __nastuser(callback_query: types.CallbackQuery, state: FSMContext):
         markup = InlineKeyboardMarkup(inline_keyboard=buttons)
         cursor.execute('update users set status=5 where uid=? ', (id,))
         conn.commit()
-        await bot.send_message(id, f"Ваш статус изменен на: {d[5]}")
-        await bot.edit_message_text(f'''Статус успешно изменен''', callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)  
+        await bot.send_message(id, f"<b>📈 Ваш статус изменен на: </b><code>{d[5]}</code>")
+        await bot.edit_message_text(f'''<b>Статус изменен</b>''', callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)  
 
 @router.callback_query(lambda c: '__adm' in c.data)
 async def __admuser(callback_query: types.CallbackQuery, state: FSMContext):
@@ -342,8 +342,8 @@ async def __admuser(callback_query: types.CallbackQuery, state: FSMContext):
         markup = InlineKeyboardMarkup(inline_keyboard=buttons)
         cursor.execute('update users set status=6 where uid=? ', (id,))
         conn.commit()
-        await bot.send_message(id, f"Ваш статус изменен на: {d[6]}")
-        await bot.edit_message_text(f'''Статус успешно изменен''', callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)  
+        await bot.send_message(id, f"<b>📈 Ваш статус изменен на: </b><code>{d[6]}</code>")
+        await bot.edit_message_text(f'''<b>Статус изменен</b>''', callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)  
 
 async def main() -> None:
     global bot
