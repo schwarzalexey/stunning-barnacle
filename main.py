@@ -110,7 +110,7 @@ async def __start_callback(callback_query: types.CallbackQuery, state: FSMContex
 
 @router.callback_query(lambda c: 'chats' in c.data)
 async def __chatpanel(callback_query: types.CallbackQuery, state: FSMContext):
-    chatwork = InlineKeyboardButton(text='Чат воркеров', url='https://t.me/+hxjypzMr3O9jZjQ0')
+    chatwork = InlineKeyboardButton(text='Чат воркеров', url='https://t.me/+kpwAEzSw2H5hM2M9')
     chatprofit = InlineKeyboardButton(text='Канал выплат', url='https://t.me/+od_rBY99YwNiNTJk')
     markup = InlineKeyboardMarkup(inline_keyboard=[[chatwork, chatprofit]] + [[InlineKeyboardButton(text='⬅️Назад', callback_data='go_start')]])
     await bot.edit_message_text("<b>💬 Чаты</b>", callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)
@@ -188,8 +188,35 @@ async def __adminpanel(callback_query: types.CallbackQuery, state: FSMContext):
     result = cursor.fetchall()
     if result[0][0] == 6:
         users = InlineKeyboardButton(text='Пользователи', callback_data='usrscheck0')
-        markup = InlineKeyboardMarkup(inline_keyboard=[[users]] + [[InlineKeyboardButton(text='⬅️Назад', callback_data='go_start')]])
+        mailing = InlineKeyboardButton(text='Рассылка', callback_data='mailing')
+        markup = InlineKeyboardMarkup(inline_keyboard=[[users], [mailing]] + [[InlineKeyboardButton(text='⬅️Назад', callback_data='go_start')]])
         await bot.edit_message_text("<b>🖥 Админ-панель</b>", callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)
+
+@router.callback_query(lambda c: 'mailing' in c.data)
+async def __mailing(callback_query: types.CallbackQuery, state: FSMContext):
+    #await bot.edit_message_text(f"Введите текст для рассылки", callback_query.from_user.id, callback_query.message.message_id)
+    users = cursor.execute('SELECT uid FROM users').fetchall()
+    succ = 0
+    errs = 0
+    for user in users:
+        text = "тесsadтовое сообщение вы все пидарасы " + repr(user[0])
+        try:
+            await bot.send_message (
+                chat_id = repr(user[0]), 
+                text = text)
+            succ += 1
+        except Exception as error:
+            await bot.send_message (
+                chat_id = callback_query.from_user.id, 
+                text = "<b>❌ Произошла ошибка при отправке\n" + text + "\n\n" + str(error) + "</b>")
+            errs += 1
+        final_text = f"<b>✅ Успешно отправлено: <code>{succ}</code>\n</b>"
+        if errs > 0:
+            final_text += f"<b>❌ Не отправлено: <code>{errs}</code></b>"
+    await bot.send_message (
+        chat_id = callback_query.from_user.id, 
+        text = final_text)
+    
     
 @router.callback_query(lambda c: 'settings' in c.data)
 async def __settpanel(callback_query: types.CallbackQuery, state: FSMContext):
