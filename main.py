@@ -263,7 +263,8 @@ async def __blockuser(callback_query: types.CallbackQuery, state: FSMContext):
         cursor.execute('update users set status=-1 where uid=? ', (id,))
         conn.commit()
         await bot.send_message(id, "<b>❌ Вы заблокированы ❌</b>")
-        await bot.edit_message_text(f'''Пользователь заблокирован''', callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)    
+        await bot.ban_chat_member(-4046131412, id)
+        await bot.edit_message_text(f'''<b>Пользователь заблокирован</b>''', callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)    
         
 @router.callback_query(lambda c: 'update' in c.data)
 async def __updateuser(callback_query: types.CallbackQuery, state: FSMContext):
