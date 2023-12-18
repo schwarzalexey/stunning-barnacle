@@ -53,12 +53,12 @@ async def __start(message: Message, state: FSMContext) -> None:
         if result[0][0] == -1:
             await message.answer('<b>❌ Вы заблокированы ❌</b>')
         elif result[0][0] == 0:
-            btn = InlineKeyboardButton(text='go', callback_data='proceed')
+            btn = InlineKeyboardButton(text='✅ Я готов!', callback_data='proceed')
             menu = InlineKeyboardMarkup(inline_keyboard=[[btn]])
-            await message.answer('Добро пожаловать.\nПеред тем, как начать работать с нами, Вам нужно будет ответить на несколько вопросов. Вы готовы?',
+            await message.answer(f'<b>Привет, {message.from_user.full_name}</b>\n\n<em>Для использования бота необходимо подать заявку, Вы готовы?</em>',
                                  reply_markup=menu)
         elif result[0][0] == 1:
-            await message.answer('Добро пожаловать. В данный момент, ваша заявка находится в обработке. Пожалуйста, ожидайте.')
+            await message.answer('<b>⏳ Ваша заявка на рассмотрении</b>')
         else:
             if result[0][0] == 6:
                 menu = InlineKeyboardMarkup(inline_keyboard=[[listings], [settings], [chats], [admin_panel]])
@@ -73,10 +73,10 @@ async def __start(message: Message, state: FSMContext) -> None:
                                                                                               message.from_user.username if message.from_user.username is not None else '',
                                                                                               ''.join(random.choice(string.ascii_letters) for i in range(8))))
         conn.commit()
-        btn = InlineKeyboardButton(text='go', callback_data='proceed')
+        btn = InlineKeyboardButton(text='✅ Я готов!', callback_data='proceed')
         menu = InlineKeyboardMarkup(inline_keyboard=[[btn]])
         await message.answer(
-            '<b>Добро пожаловать.\nПеред тем, как начать работать с нами, Вам нужно будет ответить на несколько вопросов.\nВы готовы?</b>',
+            f'<b>Привет, {message.from_user.full_name}</b>\n\n<em>Для использования бота необходимо подать заявку, Вы готовы?</em>',
             reply_markup=menu)
         
 @router.callback_query(lambda c: c.data == 'go_start')
@@ -91,14 +91,14 @@ async def __start_callback(callback_query: types.CallbackQuery, state: FSMContex
     admin_panel = InlineKeyboardButton(text='🖥 Админ-панель', callback_data='admin_panel')
     if result:
         if result[0][0] == -1:
-            await bot.edit_message_text('<b>❌ Вы заблокированы ❌</b>', cid, mid)
+            await bot.edit_message_text('<b>❌ Вы были заблокированы</b>', cid, mid)
         elif result[0][0] == 0:
-            btn = InlineKeyboardButton(text='go', callback_data='proceed')
+            btn = InlineKeyboardButton(text='✅ Я готов!', callback_data='proceed')
             menu = InlineKeyboardMarkup(inline_keyboard=[[btn]])
-            await bot.edit_message_text('<b>Добро пожаловать.\nПеред тем, как начать работать с нами, Вам нужно будет ответить на несколько вопросов.\nВы готовы?</b>', cid, mid,
+            await bot.edit_message_text(f'<b>Привет, {callback_query.message.from_user.full_name}</b>\n\n<em>Для использования бота необходимо подать заявку, Вы готовы?</em></b>', cid, mid,
                                  reply_markup=menu)
         elif result[0][0] == 1:
-            await bot.edit_message_text('<b>Добро пожаловать. В данный момент, ваша заявка находится в обработке. Пожалуйста, ожидайте.</b>', cid, mid)
+            await bot.edit_message_text('<b>⏳ Ваша заявка на рассмотрении</b>', cid, mid)
         else:
             if result[0][0] == 6:
                 menu = InlineKeyboardMarkup(inline_keyboard=[[listings], [settings], [chats], [admin_panel]])
@@ -131,21 +131,21 @@ async def __listings(callback_query: types.CallbackQuery, state: FSMContext):
 async def __proceed(callback_query: types.CallbackQuery, state: FSMContext):
     cid = callback_query.message.chat.id
     mid = callback_query.message.message_id
-    await bot.edit_message_text('''В каких командах вы работали до этого?''', cid, mid)
+    await bot.edit_message_text('''👷‍♂️ В каких командах Вы работали до этого?''', cid, mid)
     await state.set_state(CreateUser.question1)
 
 @router.message(CreateUser.question1)
 async def __q_1(message: types.Message, state: FSMContext):
     q_1 = message.text
     await state.update_data(q1=q_1)
-    await message.answer('''Сколько у Вас было профитов?''')
+    await message.answer('''💵 Сколько у Вас было профитов?''')
     await state.set_state(CreateUser.question2)
 
 @router.message(CreateUser.question2)
 async def __q_2(message: types.Message, state: FSMContext):
     q_2 = message.text
     await state.update_data(q2=q_2)
-    await message.answer('''От кого вы узнали о команде?''')
+    await message.answer('''📌 Как Вы узнали о команде?''')
     await state.set_state(CreateUser.question3)
 
 @router.message(CreateUser.question3)
@@ -155,29 +155,32 @@ async def __finalauthorization(message: types.Message, state: FSMContext):
     user_data = await state.get_data()
     cursor.execute('update users set status=1 where uid=? ', (message.from_user.id,))
     conn.commit()
-    approve = InlineKeyboardButton(text='можно', callback_data=f'appr{message.from_user.id}')
-    decline = InlineKeyboardButton(text='не можно', callback_data=f'decl{message.from_user.id}')
+    approve = InlineKeyboardButton(text='✅', callback_data=f'appr{message.from_user.id}')
+    decline = InlineKeyboardButton(text='❌', callback_data=f'decl{message.from_user.id}')
     menu = InlineKeyboardMarkup(inline_keyboard=[[approve, decline]])
-    await message.answer('''Готово! Ваша заявка отправлена на рассмотрение администрации. Пожалуйста, ожидайте.''')
+    await message.answer('''<b>✅ Ваша заявка отправлена</b>''')
     await bot.send_message(-4017721930,
-                           f'''У вас новая заявка:\nПользователь: [{message.from_user.username if message.from_user.username is not None else "id" + str(message.from_user.id)}](tg://user?id={message.from_user.id})\nВ каких командах вы работали до этого?: {user_data['q1']}\nСколько у Вас было профитов?: {user_data['q2']}\nОт кого вы узнали о команде?: {user_data['q3']}\n''',
+                           f'''📝 Заявка\n\n👤 Пользователь: <b>{"@"+message.from_user.username + " | <code>" + str(message.from_user.id) + "</code>" if message.from_user.username is not None else message.from_user.full_name + " | <code>" + str(message.from_user.id) + "</code>"}</b>\n👷‍♂️ В каких командах Вы работали до этого?: <b>{user_data['q1']}</b>\n💵 Сколько у Вас было профитов?: <b>{user_data['q2']}</b>\n📌 Как Вы узнали о команде?: <b>{user_data['q3']}\n</b>''',
                            reply_markup=menu,
-                           parse_mode=ParseMode.MARKDOWN_V2)
+                           )
     await state.clear()
 
 @router.callback_query(lambda c: 'appr' in c.data)
 async def __approve(callback_query: types.CallbackQuery, state: FSMContext):
     cursor.execute('UPDATE users SET status=2 WHERE uid=? ', (int(callback_query.data.replace('appr', '')),))
     conn.commit()
-    await bot.send_message(int(callback_query.data.replace('appr', '')), "Заявка подтверждена. Напишите /start")
-    await bot.edit_message_text(callback_query.message.text + "\nЗаявка подтверждена.", -4017721930, callback_query.message.message_id)
+    chatwork = InlineKeyboardButton(text='Чат воркеров', url='https://t.me/+hxjypzMr3O9jZjQ0')
+    chatprofit = InlineKeyboardButton(text='Канал выплат', url='https://t.me/+od_rBY99YwNiNTJk')
+    markup = InlineKeyboardMarkup(inline_keyboard=[[chatwork, chatprofit]])
+    await bot.send_message(int(callback_query.data.replace('appr', '')), "<b>✅ Ваша заявка принята.\n\n Нажмите /start для начала работы</b>", reply_markup=markup)
+    await bot.edit_message_text(callback_query.message.text + "\n\n✅ Заявка принята.", -4017721930, callback_query.message.message_id)
     
 @router.callback_query(lambda c: 'decl' in c.data)
 async def __decline(callback_query: types.CallbackQuery, state: FSMContext):
     cursor.execute('update users set status=-1 where uid=? ', (int(callback_query.data.replace('decl', '')),))
     conn.commit()
-    await bot.send_message(int(callback_query.data.replace('decl', '')), "Заявка отклонена.")
-    await bot.edit_message_text(callback_query.message.text + "\nЗаявка отклонена.", -4017721930, callback_query.message.message_id)
+    await bot.send_message(int(callback_query.data.replace('decl', '')), "❌ Ваша заявка отклонена.")
+    await bot.edit_message_text(callback_query.message.text + "\n\n❌ Заявка отклонена.", -4017721930, callback_query.message.message_id)
     
 @router.callback_query(lambda c: 'admin_panel' in c.data)
 async def __adminpanel(callback_query: types.CallbackQuery, state: FSMContext):
@@ -203,6 +206,7 @@ async def __settpanel(callback_query: types.CallbackQuery, state: FSMContext):
 @router.message(ChangeTag.tag, F.text.not_in(list(map(lambda x: x[0], cursor.execute("select tag from users").fetchall()))))
 async def __tagsuccess(message: types.Message, state: FSMContext):
     cursor.execute("update users set tag=? where uid=?", (message.text, message.from_user.id))
+    conn.commit()
     markup = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='⬅️Назад', callback_data='go_start')]])
     await bot.send_message(message.from_user.id, "Новый тэг успешно установлен.", reply_markup=markup)
     await state.clear()
