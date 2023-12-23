@@ -203,6 +203,7 @@ async def __settpanel(callback_query: types.CallbackQuery, state: FSMContext):
 @router.message(ChangeTag.tag, F.text.not_in(list(map(lambda x: x[0], cursor.execute("select tag from users").fetchall()))))
 async def __tagsuccess(message: types.Message, state: FSMContext):
     cursor.execute("update users set tag=? where uid=?", (message.text, message.from_user.id))
+    conn.commit()
     markup = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='⬅️Назад', callback_data='go_start')]])
     await bot.send_message(message.from_user.id, "Новый тэг успешно установлен.", reply_markup=markup)
     await state.clear()
