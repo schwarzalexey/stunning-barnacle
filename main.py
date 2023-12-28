@@ -40,6 +40,10 @@ class CreateUser(StatesGroup):
     
 class ChangeTag(StatesGroup):
     tag = State()
+    
+class EnterMessage(StatesGroup):
+    msg = State()
+
 
 @router.message(CommandStart())
 async def __start(message: Message, state: FSMContext) -> None:
@@ -192,14 +196,23 @@ async def __adminpanel(callback_query: types.CallbackQuery, state: FSMContext):
         markup = InlineKeyboardMarkup(inline_keyboard=[[users], [mailing]] + [[InlineKeyboardButton(text='⬅️Назад', callback_data='go_start')]])
         await bot.edit_message_text("<b>🖥 Админ-панель</b>", callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)
 
-@router.callback_query(lambda c: 'mailing' in c.data)
-async def __mailing(callback_query: types.CallbackQuery, state: FSMContext):
+@router.callback_query(lambda c: 'mailing' == c.data)
+async def __entermsg(callback_query: types.CallbackQuery, state: FSMContext):
+    await bot.edit_message_text(f"<b>Введите сообщение:</b>", callback_query.from_user.id, callback_query.message.message_id)
+    await state.set_state(EnterMessage.msg)
+
+@router.message(EnterMessage.msg)
+async def __mailing(message: types.Message, state: FSMContext):
     #await bot.edit_message_text(f"Введите текст для рассылки", callback_query.from_user.id, callback_query.message.message_id)
+    print(message)
     users = cursor.execute('SELECT uid FROM users').fetchall()
     succ = 0
     errs = 0
+    text = message.text
+    for shit in message.photo:
+        text += ""
     for user in users:
-        text = "тесsadтовое сообщение вы все пидарасы " + repr(user[0])
+        
         try:
             await bot.send_message (
                 chat_id = repr(user[0]), 
@@ -207,14 +220,14 @@ async def __mailing(callback_query: types.CallbackQuery, state: FSMContext):
             succ += 1
         except Exception as error:
             await bot.send_message (
-                chat_id = callback_query.from_user.id, 
+                chat_id = message.from_user.id, 
                 text = "<b>❌ Произошла ошибка при отправке\n" + text + "\n\n" + str(error) + "</b>")
             errs += 1
         final_text = f"<b>✅ Успешно отправлено: <code>{succ}</code>\n</b>"
         if errs > 0:
             final_text += f"<b>❌ Не отправлено: <code>{errs}</code></b>"
     await bot.send_message (
-        chat_id = callback_query.from_user.id, 
+        chat_id = message.from_user.id, 
         text = final_text)
     
     
@@ -224,7 +237,7 @@ async def __settpanel(callback_query: types.CallbackQuery, state: FSMContext):
     markup = InlineKeyboardMarkup(inline_keyboard=[[tag]] + [[InlineKeyboardButton(text='⬅️Назад', callback_data='go_start')]])
     await bot.edit_message_text("⚙️ Настройки", callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)
 
-@router.callback_query(lambda c: 'tagchng' in c.data)
+@router.callback_query(ChangeTag.tag)
 async def __settpanel(callback_query: types.CallbackQuery, state: FSMContext):
     tag = cursor.execute("select tag from users where uid=?", (callback_query.from_user.id,)).fetchone()[0]
     await bot.edit_message_text(f"<b>Ваш текущий тэг: <code>#{tag}</code>\n\nВведите новый тэг:</b>", callback_query.from_user.id, callback_query.message.message_id)
@@ -259,9 +272,9 @@ async def __adminpanel(callback_query: types.CallbackQuery, state: FSMContext):
                 i += 1
         pages = []
         n_page = int(callback_query.data.replace("usrscheck", ''))
-        for i in range(0, len(buttons), 10):
-            pages.append(buttons[i: i + 10])
-        arrows = [[InlineKeyboardButton(text=f'1 / 1', callback_data="ghjaczskdf")]] if len(pages) == 1 else [[InlineKeyboardButton(text=f'1 / {len(pages)}', callback_data="ghjaczskdf"), InlineKeyboardButton(text='->', callback_data="usrscheck1")]] if n_page == 0 else [[InlineKeyboardButton(text='<-', callback_data=f"usrscheck{len(pages) - 2}"), InlineKeyboardButton(text=f'{len(pages)} / {len(pages)}', callback_data="uazsxecdghijk")]] if n_page == len(pages) - 1 else [[InlineKeyboardButton(text='<-', callback_data=f"usrscheck{n_page - 1}"), InlineKeyboardButton(text=f'{n_page + 1} / {len(pages)}', callback_data="ghjaczskdf"), InlineKeyboardButton(text='->', callback_data=f"usrscheck{n_page + 1}")]]
+        for i in range(0, len(buttons) // 3 + 1):
+            pages.append(buttons[i: i + 1])
+        arrows = [[InlineKeyboardButton(text=f'1 / 1', callback_data="ghjaczskdf")]] if len(pages) == 1 else [[InlineKeyboardButton(text=f'1 / {len(pages)}', callback_data="ghjaczskdf"), InlineKeyboardButton(text='->', callback_data="usrscheck1")]] if n_page == 0 else [[InlineKeyboardButton(text='<-', callback_data=f"usrscheck{len(pages) - 2}"), InlineKeyboardButton(text=f'{len(pages)} / {len(pages)}', callback_data="uazsxecdghijk")]] if n_page == len(pages) - 1 else [[InlineKeyboardButton(text='<-', callback_data=f"usrscheck{n_page}"), InlineKeyboardButton(text=f'{n_page + 1} / {len(pages)}', callback_data="ghjaczskdf"), InlineKeyboardButton(text='->', callback_data=f"usrscheck{n_page}")]]
         markup = InlineKeyboardMarkup(inline_keyboard=pages[n_page]+arrows+[[InlineKeyboardButton(text='⬅️Назад', callback_data='admin_panel')]])
         await bot.edit_message_text("Пользователи", callback_query.from_user.id, callback_query.message.message_id, reply_markup=markup)
 
